@@ -1,40 +1,62 @@
 import { expect } from 'chai';
 import { spec } from 'modules/pokhvalenkoBidAdapter.js';
 
-describe('pokhvalenkoBidAdapter', function () {
-  const bid = {
-    bidder: 'pokhvalenko',
-    adUnitCode: 'div-1',
-    bidId: '1',
-    transactionId: 't1',
-    mediaTypes: { banner: { sizes: [[300, 250]] } },
-    params: { aid: 350975 }
-  };
+const VALID_BID = {
+  bidder: 'pokhvalenko',
+  adUnitCode: 'div-1',
+  bidId: '1',
+  transactionId: 't1',
+  mediaTypes: { banner: { sizes: [[300, 250]] } },
+  params: { aid: 350975 }
+};
 
+const BIDDER_REQUEST = {
+  auctionId: 'a1',
+  refererInfo: { page: 'https://site' }
+};
+
+const SERVER_RESPONSE = {
+  body: [
+    {
+      bidId: '1',
+      cpm: 0.5,
+      w: 300,
+      h: 250,
+      adm: '<div>ad</div>',
+      adomain: ['e.com'],
+      cur: 'USD',
+      ttl: 300
+    }
+  ]
+};
+
+describe('pokhvalenkoBidAdapter', function () {
   it('validates', function () {
-    expect(spec.isBidRequestValid(bid)).to.equal(true);
-    expect(spec.isBidRequestValid({ ...bid, params: {} })).to.equal(false);
+    expect(spec.isBidRequestValid(VALID_BID)).to.equal(true);
+    expect(spec.isBidRequestValid({ ...VALID_BID, params: {} })).to.equal(false);
   });
 
-  it('buildRequests returns POST with data', function () {
-    const req = spec.buildRequests([bid], { auctionId: 'a1', refererInfo: { page: 'https://site' } });
+  it('buildRequests returns POST with payload', function () {
+    const req = spec.buildRequests([VALID_BID], BIDDER_REQUEST);
     expect(req.method).to.equal('POST');
     expect(req.url).to.be.a('string');
+
     const data = JSON.parse(req.data);
+    expect(data).to.have.property('auctionId', 'a1');
     expect(data.bids).to.have.length(1);
     expect(data.bids[0].params.aid).to.equal(350975);
   });
 
   it('interpretResponse maps server bids', function () {
-    const serverResponse = { body: [{ bidId: '1', cpm: 0.5, w: 300, h: 250, adm: '<div>ad</div>', adomain: ['e.com'], cur: 'USD', ttl: 300 }] };
-    const res = spec.interpretResponse(serverResponse);
+    const res = spec.interpretResponse(SERVER_RESPONSE);
     expect(res).to.have.length(1);
-    expect(res[0].cpm).to.equal(0.5);
-    expect(res[0].width).to.equal(300);
-  });
 
-  it('getUserSyncs returns syncs', function () {
-    const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [{ body: {} }], { gdprApplies: true, consentString: 'CONSENT' }, '1YYY');
-    expect(syncs.length).to.be.greaterThan(0);
+    const bid = res[0];
+    expect(bid.requestId).to.equal('1');
+    expect(bid.cpm).to.equal(0.5);
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.ad).to.be.a('string');
+    expect(bid.currency).to.equal('USD');
   });
 });

@@ -11,9 +11,7 @@ function toSizes(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 0,
   supportedMediaTypes: [BANNER],
-  aliases: [{ code: 'myAlias' }],
 
   isBidRequestValid(bid) {
     return !!bid?.params?.aid;
@@ -59,31 +57,7 @@ export const spec = {
       meta: { advertiserDomains: r.adomain || [] },
       mediaType: BANNER,
     }));
-  },
-
-  getUserSyncs(syncOptions = {}, _serverResponses = [], gdprConsent, uspConsent) {
-    const params = new URLSearchParams();
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params.set('gdpr', Number(gdprConsent.gdprApplies).toString());
-      }
-      if (gdprConsent.consentString) params.set('gdpr_consent', gdprConsent.consentString);
-    }
-    if (uspConsent) params.set('us_privacy', uspConsent);
-    const qs = params.toString();
-    const tail = qs ? `?${qs}` : '';
-
-    const syncs = [];
-    if (syncOptions.pixelEnabled) syncs.push({ type: 'image', url: `https://prebid.pokhvalenko.ua/sync/pixel${tail}` });
-    if (syncOptions.iframeEnabled) syncs.push({ type: 'iframe', url: `https://prebid.pokhvalenko.ua/sync/iframe${tail}` });
-    return syncs;
-  },
-
-  onTimeout() {},
-  onBidWon() {},
-  onSetTargeting() {},
-  onBidderError() {},
-  onAdRenderSucceeded() {},
+  }
 };
 
 registerBidder(spec);
