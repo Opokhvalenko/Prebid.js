@@ -43,20 +43,26 @@ describe('pokhvalenkoBidAdapter', function () {
 
     const data = JSON.parse(req.data);
     expect(data).to.have.property('auctionId', 'a1');
-    expect(data.bids).to.have.length(1);
+    expect(data.bids).to.have.lengthOf(1);
     expect(data.bids[0].params.aid).to.equal(350975);
   });
 
   it('interpretResponse maps server bids', function () {
     const res = spec.interpretResponse(SERVER_RESPONSE);
-    expect(res).to.have.length(1);
-
+    expect(res).to.have.lengthOf(1);
     const bid = res[0];
-    expect(bid.requestId).to.equal('1');
-    expect(bid.cpm).to.equal(0.5);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(250);
+
+    // одна перевірка для “ядра” полів
+    expect(bid).to.include({
+      requestId: '1',
+      cpm: 0.5,
+      width: 300,
+      height: 250,
+      currency: 'USD',
+      netRevenue: true,
+    });
+
+    // окремо перевіряємо, що є креатив
     expect(bid.ad).to.be.a('string');
-    expect(bid.currency).to.equal('USD');
   });
 });
